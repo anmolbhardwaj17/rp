@@ -11,7 +11,7 @@ const PORT = process.env.PORT;
 app.use(cors())
 
 app.get("/", async (req, res) =>{
-    res.send({message:"recruitment portal homepage", code:200});
+    res.send({message:"rp assignment", code:200});
 });
 
 app.listen(PORT, () => {
