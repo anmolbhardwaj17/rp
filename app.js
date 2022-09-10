@@ -1,3 +1,4 @@
+//initialization and imports
 const dotenv = require('dotenv');
 const express = require('express');
 var cors = require('cors')
@@ -11,13 +12,20 @@ app.use(cors({
   origin: '*'
 }));
 
+//calling services
 const authService = require('./services/authService.js')
 const appService = require('./services/appService.js')
 
+//all apis
+
+
+//main api
 app.get("/", auth, async (req, res) =>{
   res.send({message:"rp assignment", status:200});
 });
 
+
+//login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -29,6 +37,8 @@ app.post("/login", async (req, res) => {
   res.send(result);
 });
 
+
+//register
 app.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -46,6 +56,7 @@ app.get('/allprices',auth, async(req, res) => {
   res.send(result);
 })
 
+//create payment session
 app.post("/session", auth, async (req, res) =>{
   const priceId = req.query.price;
   const userId = req.user.user_id;
@@ -54,6 +65,7 @@ app.post("/session", auth, async (req, res) =>{
   res.send(result);
 });
 
+//get subscription details
 app.get('/subscription', auth, async (req, res) => {
   const userId = req.user.user_id;
 
@@ -61,6 +73,8 @@ app.get('/subscription', auth, async (req, res) => {
   res.send(result);
 })
 
+
+//redirect after stripe payment
 app.get("/order/success", async (req, res) => {
   const sessionId = req.query.session_id;
   const result = await appService.redirectAfterPayment(sessionId);
@@ -70,7 +84,8 @@ app.get("/order/success", async (req, res) => {
     res.redirect(result.url);
   }    
 })
-    
+
+//get session info for a payment    
 app.get("/sessiondetailsget", async (req, res) =>{
   const sessionId = req.query.session_id;
   const result = await appService.getSessionDetails(sessionId);
@@ -78,6 +93,7 @@ app.get("/sessiondetailsget", async (req, res) =>{
   
 });
 
+//delete a user subscription
 app.delete("/deletesubscription",auth, async (req, res) =>{
   const subId = req.query.subId;
   
@@ -85,10 +101,12 @@ app.delete("/deletesubscription",auth, async (req, res) =>{
   res.send(result)
 });
 
+//404 api
 app.get('*', function(req, res){
   res.send({status:404,message:'url not found'});
 });
 
+//port listener
 app.listen(process.env.PORT, () => {
     console.log(`Server is running on port http://localhost:${process.env.PORT}`) 
 })

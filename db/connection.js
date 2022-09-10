@@ -6,5 +6,5 @@ mongoose.connect(DB).then(async ()=>{
     console.log("connected to database successfully")
 }).catch((err)=>{
     
-    console.log('connection failed');
+    console.error('connection failed');
 });

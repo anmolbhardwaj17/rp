@@ -10,6 +10,7 @@ const Subscription = require("../models/subscriptionSchema");
 const Session = require("../models/sessionSchema");
 
 module.exports = {
+    //service to fetch all prices/subscriptions in homepage
     allPrices: async function(){
         const result = [];
         const prices = await stripe.prices.list({
@@ -33,6 +34,7 @@ module.exports = {
         }
         return {status:200, result:result};
     },
+    //service to create usersession for payment using stripe
     createSession: async function(userId, priceId){
         let sub;
         await Subscription.find({userId: userId})
@@ -57,6 +59,7 @@ module.exports = {
         const sessionDetails = await Session.create(data);
         return {status:200, session:session};
     },
+    //get subscription details of a particular user
     getSubscriptionDetails: async function(userId){
         let result = [];
         await Subscription.find({userId: userId})
@@ -73,6 +76,7 @@ module.exports = {
 
         return{status:200, result:result};
     },
+    //redirect api after payment checks 
     redirectAfterPayment: async function(sessionId){
         let userId;
         await Session.findOne({sessionId:sessionId})
@@ -106,11 +110,13 @@ module.exports = {
             return {status:200, result:data, redirect:true, url:'http://localhost:3000/'};
         }
     },
+    //service to get session info from stripe
     getSessionDetails: async function(sessionId){
         const session = await stripe.checkout.sessions.retrieve(sessionId);
 
         return{status:200, session:session};
     },
+    //service to delete a subscription
     deleteSubscription: async function(subId){
         await Subscription.deleteOne({subscriptionId: subId})
         .then(response => response)

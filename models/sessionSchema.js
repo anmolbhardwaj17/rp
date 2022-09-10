@@ -6,7 +6,6 @@ const sessionSchema = new mongoose.Schema({   //schema DTO/DBO
     },
     userId:{
         type:String,
-        //required:true
     }
 })
 
