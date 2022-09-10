@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({   //schema DTO/DBO
-    userName:{
+    username:{
         type:String,
     },
     email:{
@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({   //schema DTO/DBO
         type:String,
         //required:true
     },
+    token:{
+        type:String,
+    }
 })
 
 const User = mongoose.model('USER', userSchema);

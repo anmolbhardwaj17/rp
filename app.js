@@ -2,73 +2,93 @@ const dotenv = require('dotenv');
 const express = require('express');
 var cors = require('cors')
 const app = express();
-const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51LelHLSDg3jfkNpBe9sHVmIFTfFbQNsEe3fosOoSKU07UXM8Rm1PFCAWkhh0rX5BRFYMkr5oj9sQ6jhIptdIOb7v00LSatjIk8');
-
 dotenv.config({path: './config.env'});
 
 require('./db/connection');
+const auth = require("./middleware/auth");
 app.use(express.json());
-const PORT = process.env.PORT;
-app.use(cors())
+app.use(cors({
+  origin: '*'
+}));
 
-app.get("/", async (req, res) =>{
-    const products = await stripe.products.list({
-        limit: 4,
-      });
-      console.log(products)
-    res.send({message:"rp assignment", code:200, products:products});
+const authService = require('./services/authService.js')
+const appService = require('./services/appService.js')
+
+app.get("/", auth, async (req, res) =>{
+  res.send({message:"rp assignment", status:200});
 });
 
-app.get("/prices", async (req, res) =>{
-    
-// const price = await stripe.prices.retrieve(
-//     'price_1LelopSDg3jfkNpB5c5Lkd2g'
-//   );
-const price = await stripe.prices.list({
-    limit: 8,
-  });
-      console.log(price)
-    res.send({message:"rp assignment", code:200, price:price});
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!(email && password)) {
+    res.status(400).send("All input is required");
+  }
+
+  const result = await authService.login(email, password);
+  res.send(result);
 });
 
-app.get("/session", async (req, res) =>{
-    
-    const session = await stripe.checkout.sessions.create({
-        success_url: 'http://localhost:5000/order/success?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url: 'http://localhost:5000/cancel',
-        line_items: [
-          {price: 'price_1LelopSDg3jfkNpBw6p7ksmD', quantity: 1},
-        ],
-        mode: 'subscription',
-      });
+app.post("/register", async (req, res) => {
+  const { username, email, password } = req.body;
 
-      //store session id in db for particular user
-        res.send({message:"rp assignment", code:200, price:session});
-    });
-    
-    app.get("/sessiondetailsget", async (req, res) =>{
-    
-        const session = await stripe.checkout.sessions.retrieve(
-            'cs_test_a1ZECWkQ33jTQPNw3iqGP9jYr3x0KvZSYJ7eRm689Y6w0kVDVJLY2bdwgp'
-          );
-    
-          //store session id in db for particular user
-            res.send({message:"rp assignment", code:200, price:session});
-        });
+  if (!(email && password && username)) {
+    console.log("input error")
+    res.status(400).send("All input is required");
+  }
+  const result = await authService.register(username, email, password);
+  res.send(result);
 
-       
+});
 
-          app.get("/deletesubscription", async (req, res) =>{
+app.get('/allprices',auth, async(req, res) => {
+  const result = await appService.allPrices();
+  res.send(result);
+})
+
+app.post("/session", auth, async (req, res) =>{
+  const priceId = req.query.price;
+  const userId = req.user.user_id;
+
+  const result = await appService.createSession(userId,priceId);
+  res.send(result);
+});
+
+app.get('/subscription', auth, async (req, res) => {
+  const userId = req.user.user_id;
+
+  const result = await appService.getSubscriptionDetails(userId);
+  res.send(result);
+})
+
+app.get("/order/success", async (req, res) => {
+  const sessionId = req.query.session_id;
+  const result = await appService.redirectAfterPayment(sessionId);
+  if(result.redirect){
+    res.redirect(result.url);
+  }else{
+    res.redirect(result.url);
+  }    
+})
     
-            const deleted = await stripe.subscriptions.del(
-                'sub_1Lg3eh2eZvKYlo2CXheTwxii'
-              );
-        
-              //store session id in db for particular user
-                res.send({message:"rp assignment", code:200, price:deleted});
-            });
+app.get("/sessiondetailsget", async (req, res) =>{
+  const sessionId = req.query.session_id;
+  const result = await appService.getSessionDetails(sessionId);
+  res.send(result)
+  
+});
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port http://localhost:${PORT}`) 
+app.delete("/deletesubscription",auth, async (req, res) =>{
+  const subId = req.query.subId;
+  
+  const result = await appService.deleteSubscription(subId);
+  res.send(result)
+});
+
+app.get('*', function(req, res){
+  res.send({status:404,message:'url not found'});
+});
+
+app.listen(process.env.PORT, () => {
+    console.log(`Server is running on port http://localhost:${process.env.PORT}`) 
 })
